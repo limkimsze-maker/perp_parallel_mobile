@@ -1,0 +1,2058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>P3 Parallel & Perpendicular — Mobile</title>
+
+<script>
+  window.ACTIVITY_ID = "https://limkimsze-maker.github.io/activityperp/";
+</script>
+<script src="xapiwrapper.min.js"></script>
+<script src="index.js" defer></script>
+
+<script>
+/* NewSessionClearKit */
+(function (global){
+  const Kit = {
+    init(opts = {}) {
+      const ACTIVITY_ID = String(opts.activityId || global.ACTIVITY_ID || location.href);
+      const QS = new URLSearchParams(location.search);
+      const salt = (typeof opts.scopeSalt === 'function')
+        ? (opts.scopeSalt(QS) || '')
+        : (opts.scopeSalt || '');
+      const baseQS = QS.get('attempt') || QS.get('run') || QS.get('session') || QS.toString() || 'noqs';
+      const CURR_SCOPE = `${ACTIVITY_ID}::${salt}::${baseQS}`;
+      const SCOPE_KEY  = `sls_scope::${ACTIVITY_ID}`;
+      const resetParam = opts.resetParam || 'reset';
+      const FORCE = QS.has(resetParam) || QS.has('newSession');
+
+      let prev = null;
+      try { prev = localStorage.getItem(SCOPE_KEY); } catch (e) {}
+
+      const isNew = FORCE || prev !== CURR_SCOPE;
+      if (isNew) {
+        if (opts.clickButtonId) {
+          const btn = document.getElementById(opts.clickButtonId);
+          if (btn) {
+            try { btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true })); } catch (e) {}
+          }
+        }
+        if (typeof opts.onNewSession === 'function') {
+          try { opts.onNewSession(); } catch (e) {}
+        }
+        if (opts.pushZero !== false) {
+          const payload = { score: 0 };
+          try { if (typeof global.storeState === 'function') global.storeState(payload); } catch (e) {}
+          try { if (typeof global.sendState  === 'function') global.sendState(payload);  } catch (e) {}
+        }
+        try { localStorage.setItem(SCOPE_KEY, CURR_SCOPE); } catch (e) {}
+      }
+      return { isNewAssignment: isNew, scope: CURR_SCOPE };
+    }
+  };
+  global.NewSessionClearKit = Kit;
+})(window);
+</script>
+
+<style>
+:root{
+  --ink:#0f172a; --muted:#475569;
+  --bg-grad1:#eef2ff; --bg-grad2:#fff7ed;
+  --card-bg:#ffffff; --card-border:#e5e7eb;
+  --accent:#6366f1;
+  --good-text:#065f46;
+  --bad-text:#7f1d1d;
+  --warn-bg:#fff7d6; --warn-border:#facc15; --warn-text:#1f2937;
+  --grid:#e2e8f0; --grid-bold:#cbd5e1;
+  --tool-border:#0f172a;
+  --tool-handle:#6366f1;
+  --tool-resize:#10b981;
+  --font-main:system-ui,Segoe UI,Roboto,Inter,Arial,sans-serif;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+
+html, body{
+  margin:0;
+  padding:0;
+  width:100%;
+  min-height:100vh;
+  background:linear-gradient(135deg,var(--bg-grad1),var(--bg-grad2));
+  color:var(--ink);
+  font-family:var(--font-main);
+  -webkit-text-size-adjust:100%;
+  overscroll-behavior:none;
+  overflow-x:hidden;
+  overflow-y:auto;
+}
+
+/* Hidden teacher / debug panel */
+.container{
+  display:none;
+  background:#fff;
+  padding:10px;
+  border-radius:8px;
+  box-shadow:0 0 5px rgba(0,0,0,.08);
+  width:590px;
+  height:470px;
+  overflow:auto;
+}
+#xapiBase{display:block;}
+.center{text-align:center;}
+input, button{
+  margin:5px;
+  padding:6px;
+  font-size:14px;
+  border:1px solid #ccc;
+  border-radius:4px;
+}
+button{
+  background:#28a745;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+button:hover{ background:#218838; }
+.output-container{
+  margin-top:10px;
+  padding:5px;
+  border:1px solid #ddd;
+  border-radius:4px;
+  background:#fafafa;
+  overflow:auto;
+  max-height:200px;
+}
+pre{
+  background:#e9ecef;
+  padding:5px;
+  border-radius:4px;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+  margin:0;
+  overflow-x:auto;
+}
+.separator{border:0;border-top:1px solid #ddd;margin:6px 0;}
+
+/* App frame */
+.app{
+  background:var(--card-bg);
+  border:2px solid var(--card-border);
+  border-radius:16px;
+  box-shadow:0 12px 24px rgb(0 0 0 / 0.08);
+  margin:12px;
+  padding:12px;
+
+  /* NEW: make the whole card stretch to fill viewport height */
+  min-height:calc(100vh - 24px);
+  display:flex;
+  flex-direction:column;
+  overflow:visible;
+  gap:12px;
+}
+
+/* Header / section tabs / status row */
+header.app-header{
+  flex-shrink:0;
+  text-align:center;
+  font-weight:800;
+  font-size:16px;
+  line-height:1.25;
+  color:var(--ink);
+}
+header.app-header small{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  color:#6b7280;
+  line-height:1.3;
+  margin-top:4px;
+}
+
+.section-tabs{
+  flex-shrink:0;
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:6px;
+  margin-top:4px;
+}
+.tab-btn{
+  border-radius:999px;
+  padding:6px 10px;
+  background:#fff;
+  border:2px solid #d1d5db;
+  color:#111827;
+  font-size:14px;
+  font-weight:700;
+  line-height:1.2;
+  min-height:32px;
+}
+.tab-btn.active{
+  border-color:var(--accent);
+  color:var(--accent);
+}
+.tab-btn[aria-disabled="true"]{
+  opacity:.4;
+  pointer-events:none;
+}
+
+.activity-header-row{
+  flex-shrink:0;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
+}
+#promptBox{
+  flex:1 1 auto;
+  background:var(--warn-bg);
+  border:2px solid var(--warn-border);
+  border-radius:8px;
+  color:var(--warn-text);
+  font-size:14px;
+  font-weight:700;
+  line-height:1.4;
+  text-align:left;
+  padding:8px 10px;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+.side-status{
+  flex:0 0 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:4px;
+  position:relative;
+  min-width:70px;
+}
+.side-status .badge{
+  background:#fff;
+  border:1px solid #d1d5db;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.2;
+  padding:4px 8px;
+  white-space:nowrap;
+}
+#statusBadge{
+  position:absolute;
+  right:0;
+  bottom:-40px;
+  background:#0f172a;
+  color:#fff;
+  border-radius:10px;
+  padding:6px 8px;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.3;
+  min-width:140px;
+  max-width:220px;
+  max-height:4.8em;
+  overflow:hidden;
+  display:none;
+  box-shadow:0 8px 24px rgb(0 0 0 /.2);
+}
+
+/* hide this offscreen but keep text for screen readers / JS */
+#topInfoText{
+  position:absolute;
+  left:-9999px;
+  width:1px;
+  height:1px;
+  overflow:hidden;
+}
+
+/* Middle flex: canvas card + legend + footer-panel */
+.middle-flex{
+  /* NEW: let this region eat the remaining vertical space */
+  flex:1 1 auto;
+  min-height:0;
+
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow:hidden;
+}
+
+/* board-card holds the canvas area */
+.board-card{
+  background:#fff;
+  border:2px solid var(--card-border);
+  border-radius:12px;
+  box-shadow:0 2px 6px rgb(0 0 0 /.05);
+
+  /* NEW: board-card itself now flexes and stretches */
+  flex:1 1 auto;
+  min-height:65vh;   /* was 50vh, now bigger by default */
+  height:100%;
+  max-height:none;
+
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+/* canvas area inside board-card should expand fully */
+.canvas-flex-zone{
+  flex:1 1 auto;
+  min-height:0;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+}
+
+/* canvas wrapper stretches to fill available card space */
+.canvas-wrap{
+  position:relative;
+  border-radius:8px;
+  overflow:hidden;
+  touch-action:none;
+  width:100%;
+  height:100%;
+  background:#fff;
+  box-shadow:0 2px 6px rgb(0 0 0 /.08);
+}
+
+/* actual <canvas> */
+canvas{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  background:#fff;
+  border-radius:8px;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+
+/* draggable tools layer */
+.tool-layer{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
+.tool{
+  position:absolute;
+  background:transparent;
+  border:2px solid var(--tool-border);
+  border-radius:8px;
+  box-shadow:0 8px 16px rgb(0 0 0 /.15);
+  touch-action:none;
+  pointer-events:auto;
+  transform-origin:top left;
+  transition:opacity .1s linear;
+}
+.tool.dragging{opacity:.3;}
+.tool.hidden{display:none;}
+
+.RotateHandle,
+.ResizeHandle{
+  position:absolute;
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  background:var(--tool-handle);
+  border:2px solid #fff;
+  box-shadow:0 4px 8px rgb(0 0 0 /.4);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:14px;
+  font-weight:800;
+  line-height:1;
+}
+.ResizeHandle{
+  background:var(--tool-resize);
+}
+.handle-icon{
+  font-size:14px;
+  font-weight:800;
+  line-height:1;
+}
+.handle-label{
+  font-size:9px;
+  line-height:1.1;
+  font-weight:800;
+  margin-top:2px;
+  text-transform:uppercase;
+  letter-spacing:-0.02em;
+  color:#fff;
+}
+.move-area{
+  position:absolute;
+  inset:0;
+  touch-action:none;
+  pointer-events:auto;
+}
+
+/* set square tool */
+.tool.setsquare{
+  width:110px;
+  height:110px;
+  background:rgba(37,99,235,0.35);
+  border:2px solid rgba(30,41,59,0.8);
+  clip-path:polygon(0% 0%,100% 0%,0% 100%);
+  border-radius:0;
+}
+.tool.setsquare::after{
+  content:"";
+  position:absolute;
+  left:15%;
+  top:15%;
+  width:50%;
+  height:50%;
+  background:rgba(255,255,255,0.3);
+  border:2px solid rgba(30,41,59,0.5);
+  clip-path:polygon(0% 0%,100% 0%,0% 100%);
+  border-radius:0;
+}
+
+/* ruler tool in code, can still be toggled in JS */
+.tool.ruler{
+  width:220px;
+  height:42px;
+  background:rgba(250,204,21,0.55);
+  border:2px solid rgba(30,41,59,0.8);
+  border-radius:4px;
+  display:flex;
+  align-items:flex-end;
+  padding:4px;
+}
+.ruler-marks{
+  flex:1;
+  height:100%;
+  display:flex;
+  align-items:flex-end;
+}
+.ruler-marks div{
+  width:3px;
+  background:#0f172a;
+  margin-right:5px;
+}
+.ruler-marks div.big{height:24px;}
+.ruler-marks div.small{height:14px;}
+
+/* Legend row at bottom of board-card */
+.legend-row{
+  flex-shrink:0;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  padding:8px 10px 12px;
+  font-size:14px;
+  background:#fff;
+  border-top:1px solid var(--card-border);
+}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:14px;
+  font-weight:600;
+}
+.legend-color{
+  width:22px;
+  height:5px;
+  border-radius:2px;
+}
+.legend-color.given{background:#64748b;}
+.legend-color.user{background:#0ea5e9;}
+
+/* Footer-panel is BELOW the canvas card. Still centered. */
+.footer-panel{
+  flex-shrink:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  padding:0 8px 8px;
+}
+
+/* feedback bubble */
+.feedback-bubble{
+  max-width:90%;
+  background:#fff;
+  border:3px solid var(--card-border);
+  border-radius:14px;
+  box-shadow:0 8px 20px rgb(0 0 0 / .12);
+  font-size:16px;
+  font-weight:800;
+  line-height:1.3;
+  color:var(--ink);
+  padding:10px 14px;
+  text-align:center;
+  min-height:40px;
+}
+.feedback-bubble.good{ color:var(--good-text); }
+.feedback-bubble.bad{  color:var(--bad-text);  }
+
+/* 2x2 grid of buttons */
+.control-grid{
+  display:inline-grid;
+  grid-template-columns:auto auto;
+  grid-template-rows:auto auto;
+  gap:8px 12px;
+  background:#fff;
+  border:3px solid var(--card-border);
+  border-radius:16px;
+  box-shadow:0 12px 28px rgb(0 0 0 / .15);
+  padding:12px 16px;
+}
+
+.big-btn{
+  border-radius:12px;
+  border:2px solid #d1d5db;
+  background:#fff;
+  font-size:16px;
+  font-weight:700;
+  line-height:1.2;
+  color:#111827;
+  padding:10px 12px;
+  min-width:auto;
+  min-height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  white-space:nowrap;
+}
+.big-btn.primary{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.big-btn[disabled]{opacity:.4;}
+
+/* miniPanel (final score popup after Section B complete) */
+#miniPanel{
+  display:none;
+  max-width:260px;
+  background:#fff;
+  border:2px solid #d1d5db;
+  border-radius:16px;
+  box-shadow:0 10px 24px rgb(0 0 0 /.18);
+  padding:10px 12px;
+  font-size:14px;
+  font-weight:600;
+  color:#1f2937;
+  text-align:center;
+}
+#miniPanel strong{
+  display:block;
+  font-weight:800;
+  color:#111827;
+  font-size:16px;
+  margin-bottom:4px;
+}
+#miniPanel .teacher-note{
+  font-size:12px;
+  color:#6b7280;
+  font-weight:500;
+  margin-top:6px;
+  line-height:1.4;
+}
+
+/* footer credit pinned low-left, but tiny */
+.credit-foot{
+  position:fixed;
+  bottom:8px;
+  left:8px;
+  color:#6b7280;
+  font-size:10px;
+  font-weight:600;
+  background:rgba(255,255,255,0.7);
+  border:1px solid #d1d5db;
+  border-radius:10px;
+  padding:4px 6px;
+  pointer-events:none;
+  user-select:none;
+  z-index:9998;
+}
+
+/* safety */
+.hidden{display:none;}
+.bottom-bar{ display:none !important; }
+</style>
+</head>
+
+<body>
+
+<!-- Hidden teacher / xAPI panel -->
+<div class="container" id="xapiOuter">
+  <div id="xapiBase">
+    <p class="center"><strong>HTML5 Interactive</strong></p>
+    <div class="center">
+      <label for="score-input">Score:</label>
+      <input type="text" id="score-input" />
+      <label for="feedback-input">Feedback:</label>
+      <input type="text" id="feedback-input" placeholder="Enter feedback" />
+    </div>
+    <div class="center">
+      <button id="save-store" type="button">Send/Save</button>
+      <button id="clear-inputs" type="button">Clear</button>
+      <button id="newSessionBtn" type="button" style="display:none;">_newSession</button>
+    </div>
+    <div class="output-container">
+      <pre id="result"></pre>
+      <hr class="separator" />
+      <pre id="getState"></pre>
+      <hr class="separator" />
+      <pre id="questionId"></pre>
+      <pre id="userId"></pre>
+      <pre id="cookieId"></pre>
+      <a id="activityLink"
+        href="https://limkimsze-maker.github.io/activityperp/"
+        target="_blank"
+        rel="noopener">ActivityID</a>
+    </div>
+  </div>
+</div>
+
+<main class="app" id="appCard" role="main">
+  <header class="app-header">
+    <div>P3 Parallel &amp; Perpendicular Lines</div>
+    <small>Section A: Practise · Section B: Test (first try counted)</small>
+  </header>
+
+  <div class="section-tabs">
+    <button class="tab-btn active" id="btnSectionA">Section A (Practice)</button>
+    <button class="tab-btn" id="btnSectionB">Section B (Test)</button>
+  </div>
+
+  <div class="activity-header-row">
+    <div id="promptBox">
+      Practice: Draw a line PARALLEL to AB that passes through C. Your line must pass through C. Use the yellow ruler to match AB's direction.
+    </div>
+    <div class="side-status">
+      <div class="badge" id="qLabel">Q 1 / 4</div>
+      <div class="badge" id="scoreBadge">Score: 0 / 10</div>
+      <div id="statusBadge" aria-live="polite">
+        <div id="statusBadgeText">Ready. (New session score 0)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="topInfoText">
+    Section A: Keep trying until you are correct. Drag middle = move tool. ⤢ size. ↻ rotate. Pinch/twist = resize/rotate. Tools may sit partly outside.
+  </div>
+
+  <div class="middle-flex">
+
+    <!-- big white card with canvas -->
+    <section class="board-card" aria-label="drawing area">
+
+      <!-- CANVAS AREA -->
+      <div class="canvas-flex-zone">
+        <div class="canvas-wrap" id="canvasWrap">
+          <canvas id="grid" width="1000" height="560"></canvas>
+
+          <div class="tool-layer" id="toolLayer">
+            <!-- Set Square Tool -->
+            <div class="tool setsquare hidden" id="toolSetSquare"
+                 data-x="20" data-y="20" data-rot="0" data-scale="1">
+              <div class="move-area" data-toolmove="1"></div>
+
+              <div class="RotateHandle" data-toolrotate="1"
+                   style="left:45%;top:45%;transform:translate(-50%,-50%);">
+                <div class="handle-icon">↻</div>
+                <div class="handle-label">ROTATE</div>
+              </div>
+
+              <div class="ResizeHandle" data-toolresize="1"
+                   style="left:65%;top:65%;transform:translate(-50%,-50%);">
+                <div class="handle-icon">⤢</div>
+                <div class="handle-label">SIZE</div>
+              </div>
+            </div>
+
+            <!-- Ruler Tool (hidden by default but logic kept) -->
+            <div class="tool ruler hidden" id="toolRuler"
+                 data-x="60" data-y="60" data-rot="0" data-scale="1">
+              <div class="move-area" data-toolmove="1"></div>
+
+              <div class="RotateHandle" data-toolrotate="1"
+                   style="left:50%;top:50%;transform:translate(-50%,-50%);">
+                <div class="handle-icon">↻</div>
+                <div class="handle-label">ROTATE</div>
+              </div>
+
+              <div class="ResizeHandle" data-toolresize="1"
+                   style="left:70%;top:50%;transform:translate(-50%,-50%);">
+                <div class="handle-icon">⤢</div>
+                <div class="handle-label">SIZE</div>
+              </div>
+
+              <div class="ruler-marks">
+                <div class="big"></div>
+                <div class="small"></div>
+                <div class="small"></div>
+                <div class="small"></div>
+                <div class="big"></div>
+                <div class="small"></div>
+                <div the="small"></div>
+                <div class="small"></div>
+                <div class="big"></div>
+              </div>
+            </div>
+
+          </div><!-- /tool-layer -->
+        </div><!-- /canvas-wrap -->
+      </div><!-- /canvas-flex-zone -->
+
+      <!-- LEGEND -->
+      <div class="legend-row">
+        <div class="legend-item"><span class="legend-color given"></span><span>Line AB</span></div>
+        <div class="legend-item"><span class="legend-color user"></span><span>Your line</span></div>
+      </div>
+
+    </section>
+
+    <!-- FEEDBACK + BUTTONS -->
+    <div class="footer-panel" aria-live="polite">
+      <div id="legendStatus" class="feedback-bubble"></div>
+
+      <div class="control-grid">
+        <button id="btnCheckNext" class="big-btn primary" disabled>Check</button>
+        <button id="btnClear" class="big-btn">Clear Line</button>
+        <button id="btnSquare" class="big-btn">Set Square</button>
+        <button id="btnResetTools" class="big-btn">Reset Tools</button>
+      </div>
+
+      <!-- score summary panel (only at end of Section B) -->
+      <div id="miniPanel" role="status" aria-live="polite">
+        <strong>Score saved.</strong>
+        <div id="miniScoreText">Score: —</div>
+        <div id="miniFeedbackText">Feedback: —</div>
+        <div class="teacher-note">
+          Go back to SLS and tap Submit. (Teacher: this is what will be sent.)
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /middle-flex -->
+
+</main>
+
+<!-- credit stays tiny and pinned -->
+<div class="credit-foot">© 2025 Lim Kim Sze · CC BY-NC-ND 4.0</div>
+
+<script>
+/* ============================================================
+   CONSTANTS / STATE
+   ============================================================ */
+const PAYLOAD_KEY = "p3_parallel_perpendicular_payload_v1";
+
+const COLS=18, ROWS=10, MARGIN=30;
+const MAX_DIST_FROM_AB = 4;
+
+const A_MODES_INIT = ['paraC','paraC','perpC','perpC'];
+const B_MODES_INIT = [...Array(5).fill('paraC'), ...Array(5).fill('perpC')];
+
+let orderA = shuffle([...A_MODES_INIT]);
+let orderB = shuffle([...B_MODES_INIT]);
+
+let boardsA = new Array(orderA.length).fill(null);
+let boardsB = new Array(orderB.length).fill(null);
+
+let qIndexA = 0;
+let qIndexB = 0;
+let section = 'A';
+
+let firstAttemptDoneB  = new Array(orderB.length).fill(false);
+let firstAttemptMarksB = new Array(orderB.length).fill(0);
+let firstAttemptLogB   = new Array(orderB.length).fill('?');
+let finalSavedOnce     = false;
+
+let correctA = new Array(orderA.length).fill(false);
+
+let A_pt=null, B_pt=null, C_pt=null;
+
+let canvas, ctx;
+let W, H, cellS, marginX, marginY;
+
+let userLine=null;
+let dragging=false;
+let tempStart=null;
+let previewEnd=null;
+let hoverPoint=null;
+let checked=false;
+let rightAngleAt=null;
+
+let canvasWrap;
+let toolSetSquare, toolRuler;
+
+let activeTool=null;
+let dragMode=null;
+let startPointer={x:0,y:0};
+let startState={x:0,y:0,rot:0,scale:1,startAngle:0,prevAngle:0};
+let centerCache={x:0,y:0};
+
+let gestureInfo = {
+  isGesture:false,
+  activeTool:null,
+  startDist:0,
+  startAngle:0,
+  prevAngle:0,
+  startScale:1,
+  startRot:0
+};
+
+let qLabel, scoreBadge, promptBox;
+let legendStatus;
+let btnCheckNext, btnClear;
+let btnSectionA, btnSectionB;
+let topInfoText;
+let statusBadgeText, statusBadge;
+let miniPanel, miniScoreText, miniFeedbackText;
+let btnSquare, btnResetTools;
+
+window.__IN_SLS__ = false;
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function randInt(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){const t=a%b;a=b;b=t}return a||1;}
+function vec(P,Q){return {dx:Q.x-P.x, dy:Q.y-P.y};}
+function onSegGrid(P,S1,S2){
+  return P.x>=Math.min(S1.x,S2.x)&&P.x<=Math.max(S1.x,S2.x)&&
+         P.y>=Math.min(S1.y,S2.y)&&P.y<=Math.max(S1.y,S2.y);
+}
+function passesThroughPointSEG(lineObj, P){
+  const v=vec(lineObj.p1,lineObj.p2), w=vec(lineObj.p1,P);
+  const cr = v.dx*w.dy - v.dy*w.dx;
+  if(cr !== 0) return false;
+  return onSegGrid(P, lineObj.p1, lineObj.p2);
+}
+function segInterInf(L1,L2){
+  const x1=L1.p1.x,y1=L1.p1.y,x2=L1.p2.x,y2=L1.p2.y;
+  const x3=L2.p1.x,y3=L2.p1.y,x4=L2.p2.x,y4=L2.p2.y;
+  const den=(x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+  if(den===0) return null;
+  const px=((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/den;
+  const py=((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/den;
+  return {x:px,y:py};
+}
+function stepBases(A,B){
+  const dx=B.x-A.x, dy=B.y-A.y;
+  const g=gcd(dx,dy);
+  return {para:{x:dx/g,y:dy/g},perp:{x:-dy/g,y:dx/g}};
+}
+function gridReachable(C,step){
+  const maxK=Math.max(COLS,ROWS)+2;
+  for(const s of [-1,1]) for(let k=1;k<=maxK;k++){
+    const x=C.x+s*k*step.x, y=C.y+s*k*step.y;
+    if(x>=0&&x<=COLS&&y>=0&&y<=ROWS) return true;
+  }
+  return false;
+}
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function footOfPerpToSeg(A_,B_,C_){
+  const AB = {x:B_.x-A_.x,y:B_.y-A_.y};
+  const AC = {x:C_.x-A_.x,y:C_.y-A_.y};
+  const ab2 = AB.x*AB.x+AB.y*AB.y || 1;
+  const t = (AC.x*AB.x+AC.y*AB.y)/ab2;
+  const foot = {x:A_.x+AB.x*t, y:A_.y+AB.y*t};
+  return {foot,t};
+}
+
+function dist(p1,p2){return Math.hypot(p2.x-p1.x,p2.y-p1.y);}
+function angleDeg(p1,p2){return Math.atan2(p2.y-p1.y,p2.x-p1.x)*(180/Math.PI);}
+function angleDiffDeg(a,b){
+  let d=a-b;
+  while(d>180) d-=360;
+  while(d<-180) d+=360;
+  return d;
+}
+
+/* ============================================================
+   BOARD GENERATION
+   ============================================================ */
+function genBoard(mode){
+  const MAX=800;
+  let A_,B_,C_;
+  outer: for(let t=0;t<MAX;t++){
+    const ax=randInt(5,10);
+    const ay=randInt(3,6);
+
+    const bx=randInt(ax+2,13);
+    const by=randInt(4,8);
+
+    if(ax===bx && ay===by) continue;
+    A_={x:ax,y:ay}; B_={x:bx,y:by};
+
+    const basis=stepBases(A_,B_);
+    for(let k=0;k<500;k++){
+      const cx=randInt(4,14);
+      const cy=randInt(2,8);
+      const Cc={x:cx,y:cy};
+
+      if((Cc.x===A_.x&&Cc.y===A_.y)||(Cc.x===B_.x&&Cc.y===B_.y)) continue;
+      if(((B_.y-A_.y)*(Cc.x-A_.x) - (B_.x-A_.x)*(Cc.y-A_.y)) === 0) continue;
+
+      const {foot,t:tt} = footOfPerpToSeg(A_,B_,Cc);
+      if(tt<0 || tt>1) continue;
+
+      const d = Math.hypot(Cc.x-foot.x, Cc.y-foot.y);
+      if(d>MAX_DIST_FROM_AB) continue;
+
+      const canPara=gridReachable(Cc,basis.para);
+      const canPerp=gridReachable(Cc,basis.perp);
+      if(!canPara || !canPerp) continue;
+
+      C_=Cc;
+      break outer;
+    }
+  }
+
+  if(!A_){
+    A_={x:7,y:4}; B_={x:12,y:7}; C_={x:9,y:5};
+  }
+  return {A:A_,B:B_,C:C_};
+}
+
+/* ============================================================
+   CANVAS / DRAW
+   ============================================================ */
+function resizeCanvas(){
+  const rect=canvasWrap.getBoundingClientRect();
+  const ratio = Math.max(1, Math.min(3, Math.round((window.devicePixelRatio||1))));
+  canvas.width  = Math.max(400, Math.round(rect.width  * ratio));
+  canvas.height = Math.max(220, Math.round(rect.height * ratio));
+
+  W=canvas.width; H=canvas.height;
+  ctx.setTransform(1,0,0,1,0,0);
+  layout();
+  if(A_pt && B_pt && C_pt){paint();}
+
+  clampToolToCanvas(toolSetSquare);
+  updateToolTransform(toolSetSquare);
+  clampToolToCanvas(toolRuler);
+  updateToolTransform(toolRuler);
+}
+function layout(){
+  const availW=W-2*MARGIN, availH=H-2*MARGIN;
+  cellS=Math.min(availW/COLS, availH/ROWS);
+  marginX=(W-COLS*cellS)/2;
+  marginY=(H-ROWS*cellS)/2;
+}
+function toCanvasCoord(p){
+  return {x: marginX + p.x*cellS, y: marginY + p.y*cellS};
+}
+function toGridCoord(px,py){
+  return {
+    x:clamp(Math.round((px-marginX)/cellS),0,COLS),
+    y:clamp(Math.round((py-marginY)/cellS),0,ROWS)
+  };
+}
+function getCSS(v){
+  return getComputedStyle(document.documentElement).getPropertyValue(v)||'#e5e7eb';
+}
+function drawGrid(){
+  ctx.clearRect(0,0,W,H);
+  ctx.lineWidth=1; ctx.strokeStyle=getCSS('--grid');
+  ctx.beginPath();
+  for(let i=0;i<=COLS;i++){
+    const x=marginX+i*cellS;
+    ctx.moveTo(x,marginY); ctx.lineTo(x,marginY+ROWS*cellS);
+  }
+  for(let j=0;j<=ROWS;j++){
+    const y=marginY+j*cellS;
+    ctx.moveTo(marginX,y); ctx.lineTo(marginX+COLS*cellS,y);
+  }
+  ctx.stroke();
+
+  ctx.lineWidth=1.2; ctx.strokeStyle=getCSS('--grid-bold');
+  ctx.beginPath();
+  for(let i=0;i<=COLS;i+=3){
+    const x=marginX+i*cellS;
+    ctx.moveTo(x,marginY); ctx.lineTo(x,marginY+ROWS*cellS);
+  }
+  for(let j=0;j<=ROWS;j+=3){
+    const y=marginY+j*cellS;
+    ctx.moveTo(marginX,y); ctx.lineTo(marginX+COLS*cellS,y);
+  }
+  ctx.stroke();
+
+  ctx.lineWidth=2; ctx.strokeStyle='#e5e7eb';
+  ctx.strokeRect(marginX,marginY,COLS*cellS,ROWS*cellS);
+}
+
+/* Bigger A B C labels */
+function drawPoint(P,label){
+  const p=toCanvasCoord(P);
+  ctx.fillStyle='#111827';
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,Math.max(5,cellS*0.09),0,Math.PI*2);
+  ctx.fill();
+
+  ctx.font = 'bold ' + Math.max(20,Math.floor(cellS*0.4))+'px Arial';
+  ctx.fillStyle='#111827';
+  ctx.textAlign='center';
+  ctx.textBaseline='bottom';
+
+  const dx=(label==='A'||label==='B')?Math.max(14,cellS*0.2):0;
+  ctx.fillText(label,p.x+dx,p.y-10);
+}
+function drawAB(){
+  ctx.lineWidth=Math.max(2,cellS*0.06); ctx.strokeStyle='#64748b';
+  const a=toCanvasCoord(A_pt), b=toCanvasCoord(B_pt);
+  ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+  drawPoint(A_pt,'A'); drawPoint(B_pt,'B'); drawPoint(C_pt,'C');
+}
+function drawRightAngleMark(P){
+  const aa=toCanvasCoord(A_pt), bb=toCanvasCoord(B_pt);
+  const ux2=bb.x-aa.x, uy2=bb.y-aa.y;
+  const len=Math.hypot(ux2,uy2)||1;
+  const U={x:ux2/len,y:uy2/len};
+  const V={x:-U.y,y:U.x};
+  const s=Math.max(10,cellS*0.35);
+  const p0={x:P.x,y:P.y};
+  const p1={x:P.x+U.x*s,y:P.y+U.y*s};
+  const p2={x:p1.x+V.x*s,y:p1.y+V.y*s};
+  const p3={x:P.x+V.x*s,y:P.y+V.y*s};
+  ctx.save();
+  ctx.fillStyle='#111827';
+  ctx.beginPath();
+  ctx.moveTo(p0.x,p0.y);
+  ctx.lineTo(p1.x,p1.y);
+  ctx.lineTo(p2.x,p2.y);
+  ctx.lineTo(p3.x,p3.y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+function drawUserStuff(){
+  if(dragging && tempStart && previewEnd){
+    ctx.save();
+    ctx.lineWidth=Math.max(3,cellS*0.08);
+    ctx.setLineDash([Math.max(8,cellS*0.25), Math.max(6,cellS*0.2)]);
+    ctx.strokeStyle='#0ea5e9';
+    const p1=toCanvasCoord(tempStart), p2=toCanvasCoord(previewEnd);
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+    ctx.restore();
+  }
+  if(userLine){
+    ctx.lineWidth=Math.max(4,cellS*0.1); ctx.strokeStyle='#0ea5e9';
+    const p1=toCanvasCoord(userLine.p1), p2=toCanvasCoord(userLine.p2);
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  }
+  const crossVis=dragging?previewEnd:hoverPoint;
+  if(crossVis){
+    const p=toCanvasCoord(crossVis);
+    ctx.save();
+    ctx.strokeStyle='#ef4444';
+    ctx.lineWidth=Math.max(2,cellS*0.05);
+    const L=Math.max(16,cellS*0.45);
+    ctx.beginPath();
+    ctx.moveTo(p.x-L,p.y); ctx.lineTo(p.x+L,p.y);
+    ctx.moveTo(p.x,p.y-L); ctx.lineTo(p.x,p.y+L);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.fillStyle='#ef4444';
+    ctx.arc(p.x,p.y,Math.max(3.5,cellS*0.06),0,Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+  if(rightAngleAt){
+    drawRightAngleMark(rightAngleAt);
+  }
+}
+function paint(){
+  drawGrid();
+  drawAB();
+  drawUserStuff();
+}
+
+/* ============================================================
+   QUESTION / HUD / FEEDBACK
+   ============================================================ */
+function questionCount(){ return (section==='A') ? orderA.length : orderB.length; }
+function currentIndex(){ return (section==='A') ? qIndexA : qIndexB; }
+function currentMode(){ return (section==='A') ? orderA[qIndexA] : orderB[qIndexB]; }
+function totalScoreB(){ return firstAttemptMarksB.reduce((a,b)=>a+b,0); }
+function allAttemptedB(){ return firstAttemptDoneB.every(v=>v===true); }
+function allCorrectA(){ return correctA.every(v=>v===true); }
+
+function buildNeedsHelp(){
+  let struggledParallel=false, struggledPerp=false;
+  for(let i=0;i<orderB.length;i++){
+    const mode=orderB[i], got=firstAttemptMarksB[i]===1;
+    if(!got){
+      if(mode==='paraC') struggledParallel=true;
+      if(mode==='perpC') struggledPerp=true;
+    }
+  }
+  if(!struggledParallel && !struggledPerp) return "Good both.";
+  if(struggledParallel && struggledPerp)   return "Needs both parallel & perpendicular.";
+  if(struggledParallel)                    return "Needs parallel.";
+  if(struggledPerp)                        return "Needs perpendicular.";
+  return "Good.";
+}
+function buildFinalFeedbackString(){
+  const scoreNow = totalScoreB();
+  const parts=[];
+  for(let i=0;i<firstAttemptLogB.length;i++){
+    const mode = (orderB[i]==='paraC' ? 'para' : 'perp');
+    parts.push("Q"+(i+1)+"("+mode+"):"+firstAttemptLogB[i]);
+  }
+  return "Parallel/Perpendicular first-try score "+scoreNow+"/10 | "+parts.join(", ")+ " | "+buildNeedsHelp();
+}
+
+function updateLegendBubbleNeutral(){
+  legendStatus.className = "feedback-bubble";
+  legendStatus.textContent = "";
+}
+
+function updateHUD(){
+  const qi=currentIndex(), totalQ=questionCount();
+  qLabel.textContent = `Q ${qi+1} / ${totalQ}`;
+  scoreBadge.textContent = `Score: ${totalScoreB()} / 10`;
+
+  let instructionText;
+  if(section==='A'){
+    instructionText = (currentMode()==='paraC')
+      ? "Practice: Draw a PARALLEL line through C (same direction as AB)."
+      : "Practice: Draw a PERPENDICULAR line through C. Use the blue set square (must TOUCH AB in test).";
+    topInfoText.textContent = allCorrectA()
+      ? "Practice finished. Go to Section B (Test). First try counts."
+      : "Section A: Keep trying until you are correct. Drag middle = move. ⤢ size | ↻ rotate.";
+  }else{
+    instructionText = (currentMode()==='paraC')
+      ? "TEST: First try counts. Draw a PARALLEL line through C (same direction as AB)."
+      : "TEST: First try counts. Draw a PERPENDICULAR line through C that TOUCHES AB.";
+    topInfoText.textContent = "Section B: FIRST TRY for each question counts.";
+  }
+  promptBox.textContent = instructionText;
+
+  updateLegendBubbleNeutral();
+  btnCheckNext.textContent="Check";
+  btnCheckNext.dataset.mode="check";
+  btnCheckNext.disabled=!userLine;
+  checked=false;
+
+  if(section==='B' && allAttemptedB()){
+    finalizeAndSaveIfNeeded();
+  }
+}
+
+/* ============================================================
+   LOAD QUESTION
+   ============================================================ */
+function loadQuestion(){
+  rightAngleAt=null;
+  userLine=null;
+  tempStart=null;
+  previewEnd=null;
+  dragging=false;
+
+  if(section==='A'){
+    if(!boardsA[qIndexA]) boardsA[qIndexA]=genBoard(orderA[qIndexA]);
+    const {A,B,C}=boardsA[qIndexA];
+    A_pt=A; B_pt=B; C_pt=C;
+  }else{
+    if(!boardsB[qIndexB]) boardsB[qIndexB]=genBoard(orderB[qIndexB]);
+    const {A,B,C}=boardsB[qIndexB];
+    A_pt=A; B_pt=B; C_pt=C;
+  }
+
+  updateHUD();
+  paint();
+}
+
+/* ============================================================
+   CHECK ANSWER + SCORING
+   ============================================================ */
+function isParallel(v1,v2){
+  return (v1.dx*v2.dy - v1.dy*v2.dx) === 0;
+}
+function isPerp(v1,v2){
+  return (v1.dx*v2.dx + v1.dy*v2.dy) === 0;
+}
+function checkCurrentAnswer(){
+  if(!userLine) return {ok:false};
+  const vAB = vec(A_pt,B_pt);
+  const vU  = vec(userLine.p1,userLine.p2);
+
+  const passC = passesThroughPointSEG(userLine, C_pt);
+  const modeNow=currentMode();
+
+  const angleOK = (modeNow==='paraC') ? isParallel(vAB, vU) : isPerp(vAB, vU);
+
+  let inter=null, touches=true;
+  if(modeNow==='perpC' && angleOK && passC){
+    inter = segInterInf(userLine,{p1:A_pt,p2:B_pt});
+    touches = !!inter && onSegGrid(inter,A_pt,B_pt);
+  }
+
+  const ok = angleOK && passC && (modeNow!=='perpC' || touches);
+
+  return {
+    ok,
+    inter:(ok && modeNow==='perpC' && inter)?inter:null
+  };
+}
+
+function markFirstAttemptIfNeeded(isCorrect){
+  if(section!=='B') return;
+  const i=qIndexB;
+  if(!firstAttemptDoneB[i]){
+    firstAttemptDoneB[i]=true;
+    firstAttemptMarksB[i]=isCorrect?1:0;
+    firstAttemptLogB[i]=isCorrect?"Y":"N";
+  }
+}
+
+/* ============================================================
+   SLS BRIDGE
+   ============================================================ */
+function pushToXAPI(score, feedback){
+  try {
+    const sInput = document.getElementById('score-input');
+    const fInput = document.getElementById('feedback-input');
+    if (sInput) sInput.value = String(score);
+    if (fInput) fInput.value = feedback || '';
+
+    if (typeof updateStore === 'function') {
+      updateStore();
+    } else if (typeof storeState === 'function') {
+      storeState({ score, feedback});
+    }
+
+    const badge = document.getElementById('statusBadge');
+    const txt   = document.getElementById('statusBadgeText');
+    if (badge){
+      const shortFb = (feedback && feedback.length>80)
+        ? feedback.slice(0,80)+'…'
+        : (feedback||'');
+      if(txt){
+        txt.textContent = `Saved for SLS · Score ${score}${shortFb ? ' · ' + shortFb : ''}`;
+      }else{
+        badge.textContent = `Saved for SLS · Score ${score}${shortFb ? ' · ' + shortFb : ''}`;
+      }
+      badge.style.display='block';
+    }
+
+    if(miniPanel && miniPanel.style.display==="block"){
+      miniScoreText.textContent="Score: "+score+" / 10";
+      miniFeedbackText.textContent="Feedback: "+feedback;
+    }
+  } catch(e) {}
+}
+
+function writePayload(score, feedback){
+  try {
+    localStorage.setItem(
+      PAYLOAD_KEY,
+      JSON.stringify({ score, feedback, t: Date.now() })
+    );
+  } catch(e){}
+}
+function readPayload(){
+  try{
+    const raw=localStorage.getItem(PAYLOAD_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){return null;}
+}
+function syncFromLocalStorageToXAPI(){
+  const saved=readPayload();
+  if(!saved) return;
+  pushToXAPI(saved.score, saved.feedback);
+}
+
+/* ============================================================
+   FINALISE SCORE (Section B completed)
+   ============================================================ */
+function finalizeAndSaveIfNeeded(){
+  if(finalSavedOnce || !allAttemptedB()) return;
+
+  const finalScore   = totalScoreB();                // 0–10
+  const finalFeedback= buildFinalFeedbackString();   // summary
+
+  writePayload(finalScore, finalFeedback);
+  pushToXAPI(finalScore, finalFeedback);
+
+  miniScoreText.textContent   = "Score: "+finalScore+" / 10";
+  miniFeedbackText.textContent= "Feedback: "+finalFeedback;
+  miniPanel.style.display     = "block";
+
+  finalSavedOnce=true;
+}
+
+/* ============================================================
+   BUTTON: CHECK / NEXT
+   ============================================================ */
+function doCheckOrNext(){
+  if(btnCheckNext.dataset.mode==="next" || checked){
+    if(section==='A'){
+      qIndexA=(qIndexA+1)%orderA.length;
+    } else {
+      qIndexB=(qIndexB+1)%orderB.length;
+    }
+    loadQuestion();
+    return;
+  }
+
+  const res=checkCurrentAnswer();
+  const modeNow=currentMode();
+
+  if(section==='A' && res.ok){
+    correctA[qIndexA]=true;
+  }
+
+  markFirstAttemptIfNeeded(res.ok);
+
+  if(res.ok){
+    legendStatus.className="feedback-bubble good";
+    legendStatus.textContent="Correct! 🎉";
+
+    if(modeNow==='perpC' && res.inter){
+      const pc=toCanvasCoord(res.inter);
+      rightAngleAt={x:pc.x,y:pc.y};
+    }else{
+      rightAngleAt=null;
+    }
+
+    btnCheckNext.textContent="Next";
+    btnCheckNext.dataset.mode="next";
+    btnCheckNext.disabled=false;
+    checked=true;
+  }else{
+    legendStatus.className="feedback-bubble bad";
+    legendStatus.textContent="Not yet. Try again!";
+    rightAngleAt=null;
+
+    btnCheckNext.textContent="Check";
+    btnCheckNext.dataset.mode="check";
+    checked=false;
+  }
+
+  paint();
+
+  if(section==='A' && allCorrectA()){
+    topInfoText.textContent=
+      "Practice finished. Go to Section B (Test). First try counts.";
+  }
+  if(section==='B' && allAttemptedB()){
+    finalizeAndSaveIfNeeded();
+  }
+}
+
+/* ============================================================
+   STUDENT DRAW EVENTS
+   ============================================================ */
+function getCanvasXY(evt){
+  let clientX, clientY;
+  if(evt.touches && evt.touches.length){
+    clientX=evt.touches[0].clientX;
+    clientY=evt.touches[0].clientY;
+  } else if(evt.changedTouches && evt.changedTouches.length){
+    clientX=evt.changedTouches[0].clientX;
+    clientY=evt.changedTouches[0].clientY;
+  } else {
+    clientX=evt.clientX;
+    clientY=evt.clientY;
+  }
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width;
+  const scaleY=canvas.height/rect.height;
+  return {
+    x:(clientX-rect.left)*scaleX,
+    y:(clientY-rect.top )*scaleY
+  };
+}
+
+function startDraw(evt){
+  if(checked && btnCheckNext.dataset.mode==="next") return;
+  if(isEventOnTool(evt)) return;
+  evt.preventDefault();
+  const {x,y}=getCanvasXY(evt);
+  const p=toGridCoord(x,y);
+
+  tempStart=p;
+  dragging=true;
+  previewEnd=p;
+  hoverPoint=null;
+  userLine=null;
+  btnCheckNext.disabled=true;
+  paint();
+}
+function moveDraw(evt){
+  if(checked && btnCheckNext.dataset.mode==="next") return;
+
+  if(gestureInfo.isGesture){
+    evt.preventDefault();
+    doGestureUpdate(evt);
+    return;
+  }
+  if(activeTool){
+    evt.preventDefault();
+    doToolDrag(evt);
+    return;
+  }
+
+  evt.preventDefault();
+  const {x,y}=getCanvasXY(evt);
+  const p=toGridCoord(x,y);
+
+  if(dragging){
+    previewEnd=p;
+    userLine={p1:tempStart,p2:p};
+    btnCheckNext.disabled=false;
+  } else {
+    hoverPoint=p;
+  }
+  paint();
+}
+function endDraw(evt){
+  if(checked && btnCheckNext.dataset.mode==="next") return;
+
+  if(gestureInfo.isGesture){
+    evt.preventDefault();
+    endGestureIfDone(evt);
+    return;
+  }
+  if(activeTool){
+    evt.preventDefault();
+    finishToolDrag();
+    return;
+  }
+
+  evt.preventDefault();
+  const {x,y}=getCanvasXY(evt);
+  const p=toGridCoord(x,y);
+
+  if(dragging && tempStart){
+    if(p.x!==tempStart.x || p.y!==tempStart.y){
+      userLine={p1:tempStart,p2:p};
+      btnCheckNext.disabled=false;
+    }
+  }
+
+  dragging=false;
+  previewEnd=null;
+  paint();
+}
+function leaveDraw(){
+  if(checked && btnCheckNext.dataset.mode==="next") return;
+  if(gestureInfo.isGesture){
+    endGestureCompletely();
+  }
+  if(dragging){
+    dragging=false;
+    previewEnd=null;
+    paint();
+  }
+  if(activeTool){
+    finishToolDrag();
+  }
+}
+function clearLine(){
+  if(checked && btnCheckNext.dataset.mode==="next") return;
+  userLine=null;
+  tempStart=null;
+  previewEnd=null;
+  dragging=false;
+  btnCheckNext.disabled=true;
+  rightAngleAt=null;
+  updateLegendBubbleNeutral();
+  paint();
+}
+
+/* ============================================================
+   TOOL SYSTEM
+   ============================================================ */
+function toggleTool(toolEl){
+  if(toolEl.classList.contains('hidden')){
+    toolEl.classList.remove('hidden');
+  }else{
+    toolEl.classList.add('hidden');
+    if(activeTool===toolEl){
+      activeTool.classList.remove('dragging');
+      activeTool=null;
+      dragMode=null;
+    }
+    if(gestureInfo.activeTool===toolEl){
+      endGestureCompletely();
+    }
+  }
+}
+
+function isEventOnTool(evt){
+  if(evt.touches && evt.touches.length>0){
+    for(const t of evt.touches){
+      const el = document.elementFromPoint(t.clientX,t.clientY);
+      if(el && el.closest && el.closest('.tool')) return true;
+      if(el && el.classList && (
+        el.classList.contains('RotateHandle')||
+        el.classList.contains('ResizeHandle')||
+        el.classList.contains('move-area')
+      )) return true;
+    }
+    return false;
+  }else{
+    const el=evt.target;
+    if(!el) return false;
+    if(el.closest && el.closest('.tool')) return true;
+    if(el.classList && (
+      el.classList.contains('RotateHandle')||
+      el.classList.contains('ResizeHandle')||
+      el.classList.contains('move-area')
+    )) return true;
+    return false;
+  }
+}
+function pointerClientXY(evt){
+  if(evt.touches && evt.touches.length){
+    return {x:evt.touches[0].clientX,y:evt.touches[0].clientY};
+  }else if(evt.changedTouches && evt.changedTouches.length){
+    return {x:evt.changedTouches[0].clientX,y:evt.changedTouches[0].clientY};
+  }else{
+    return {x:evt.clientX,y:evt.clientY};
+  }
+}
+
+function getRotatedScaledExtents(w,h,rotDeg,scale){
+  const th = rotDeg * Math.PI/180;
+  const cos = Math.cos(th)*scale;
+  const sin = Math.sin(th)*scale;
+  const pts=[{x:0,y:0},{x:w,y:0},{x:0,y:h},{x:w,y:h}].map(p=>({
+    x:p.x*cos - p.y*sin,
+    y:p.x*sin + p.y*cos
+  }));
+  let minX=pts[0].x, maxX=pts[0].x;
+  let minY=pts[0].y, maxY=pts[0].y;
+  for(let i=1;i<pts.length;i++){
+    if(pts[i].x<minX)minX=pts[i].x;
+    if(pts[i].x>maxX)maxX=pts[i].x;
+    if(pts[i].y<minY)minY=pts[i].y;
+    if(pts[i].y>maxY)maxY=pts[i].y;
+  }
+  return {minX,maxX,minY,maxY,width:maxX-minX,height:maxY-minY};
+}
+
+/* allow ~2/3 out of canvas bounds */
+function clampToolToCanvas(toolEl){
+  if(!toolEl || toolEl.classList.contains('hidden')) return;
+  const wrapW = canvasWrap.clientWidth;
+  const wrapH = canvasWrap.clientHeight;
+
+  let x = parseFloat(toolEl.dataset.x||"0");
+  let y = parseFloat(toolEl.dataset.y||"0");
+  let r = parseFloat(toolEl.dataset.rot||"0");
+  let sc = parseFloat(toolEl.dataset.scale||"1");
+  if(sc<0.3) sc=0.3;
+  if(sc>3)   sc=3;
+  toolEl.dataset.scale=String(sc);
+
+  const baseW = toolEl.offsetWidth;
+  const baseH = toolEl.offsetHeight;
+  const ext = getRotatedScaledExtents(baseW,baseH,r,sc);
+
+  const width  = ext.width;
+  const height = ext.height;
+
+  const maxLeftOverflow   = (2/3)*width;
+  const maxRightOverflow  = (2/3)*width;
+  const maxTopOverflow    = (2/3)*height;
+  const maxBottomOverflow = (2/3)*height;
+
+  const leftDist = x + ext.minX;
+  if(leftDist < -maxLeftOverflow){
+    const diff = (-maxLeftOverflow) - leftDist;
+    x += diff;
+  }
+
+  const rightDist = x + ext.maxX;
+  if(rightDist > wrapW + maxRightOverflow){
+    const diff = rightDist - (wrapW + maxRightOverflow);
+    x -= diff;
+  }
+
+  const topDist = y + ext.minY;
+  if(topDist < -maxTopOverflow){
+    const diff = (-maxTopOverflow) - topDist;
+    y += diff;
+  }
+
+  const bottomDist = y + ext.maxY;
+  if(bottomDist > wrapH + maxBottomOverflow){
+    const diff = bottomDist - (wrapH + maxBottomOverflow);
+    y -= diff;
+  }
+
+  toolEl.dataset.x = String(x);
+  toolEl.dataset.y = String(y);
+}
+
+function beginToolDrag(evt){
+  if(evt.touches && evt.touches.length>1){
+    tryBeginGesture(evt);
+    return;
+  }
+
+  let targetTool=null;
+  let mode=null;
+  const path = evt.composedPath ? evt.composedPath() : (evt.path || []);
+  for(const n of path){
+    if(!n || !n.classList) continue;
+
+    if(n.hasAttribute && n.hasAttribute('data-toolrotate')){
+      mode="rotate"; targetTool = n.closest('.tool'); break;
+    }
+    if(n.hasAttribute && n.hasAttribute('data-toolresize')){
+      mode="resize"; targetTool = n.closest('.tool'); break;
+    }
+    if(n.hasAttribute && n.hasAttribute('data-toolmove')){
+      mode="move"; targetTool = n.closest('.tool'); break;
+    }
+  }
+  if(!targetTool) return;
+
+  evt.preventDefault();
+  activeTool = targetTool;
+  dragMode   = mode;
+  activeTool.classList.add('dragging');
+
+  const startPos = pointerClientXY(evt);
+  startPointer.x = startPos.x;
+  startPointer.y = startPos.y;
+
+  startState.x     = parseFloat(activeTool.dataset.x||"0");
+  startState.y     = parseFloat(activeTool.dataset.y||"0");
+  startState.rot   = parseFloat(activeTool.dataset.rot||"0");
+  startState.scale = parseFloat(activeTool.dataset.scale||"1") || 1;
+
+  const rect=activeTool.getBoundingClientRect();
+  centerCache.x = rect.left + rect.width/2;
+  centerCache.y = rect.top  + rect.height/2;
+
+  startState.startAngle = Math.atan2(startPointer.y - centerCache.y, startPointer.x - centerCache.x)*(180/Math.PI);
+  startState.prevAngle  = startState.startAngle;
+}
+
+function doToolDrag(evt){
+  if(!activeTool) return;
+  const curr = pointerClientXY(evt);
+
+  if(dragMode==="move"){
+    const dx = curr.x - startPointer.x;
+    const dy = curr.y - startPointer.y;
+    let newX = parseFloat(activeTool.dataset.x||"0") + dx;
+    let newY = parseFloat(activeTool.dataset.y||"0") + dy;
+    activeTool.dataset.x = String(newX);
+    activeTool.dataset.y = String(newY);
+
+    clampToolToCanvas(activeTool);
+    updateToolTransform(activeTool);
+
+    startPointer = curr;
+
+  }else if(dragMode==="rotate"){
+    const currAngle = Math.atan2(curr.y - centerCache.y, curr.x - centerCache.x)*(180/Math.PI);
+    const dAngStep = angleDiffDeg(currAngle, startState.prevAngle);
+    let newRot = parseFloat(activeTool.dataset.rot||startState.rot);
+    newRot += dAngStep*0.5; // damp twist
+    newRot = Math.round(newRot*2)/2; // snap
+    activeTool.dataset.rot = String(newRot);
+    startState.prevAngle = currAngle;
+
+    clampToolToCanvas(activeTool);
+    updateToolTransform(activeTool);
+
+  }else if(dragMode==="resize"){
+    const d0 = Math.hypot(startPointer.x-centerCache.x, startPointer.y-centerCache.y);
+    const d1 = Math.hypot(curr.x-centerCache.x,        curr.y-centerCache.y);
+    let sc = startState.scale * (d1/(d0||1));
+    sc=clamp(sc,0.3,3);
+    activeTool.dataset.scale=String(sc);
+
+    clampToolToCanvas(activeTool);
+    updateToolTransform(activeTool);
+  }
+}
+
+function finishToolDrag(){
+  if(activeTool){
+    activeTool.classList.remove('dragging');
+  }
+  activeTool=null;
+  dragMode=null;
+}
+
+function updateToolTransform(el){
+  if(!el) return;
+  const x=parseFloat(el.dataset.x||"0");
+  const y=parseFloat(el.dataset.y||"0");
+  let r=parseFloat(el.dataset.rot||"0");
+  let sc=parseFloat(el.dataset.scale||"1");
+  sc=clamp(sc,0.3,3);
+  el.dataset.scale=String(sc);
+
+  el.style.transform=`translate(${x}px, ${y}px) rotate(${r}deg) scale(${sc})`;
+}
+
+/* ============================================================
+   MULTI-TOUCH GESTURE
+   ============================================================ */
+function getTouchesForTool(evt, tool){
+  const list=[];
+  if(!evt.touches) return list;
+  for(const t of evt.touches){
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    if(!el) continue;
+    if(el.closest && el.closest('.tool')===tool){
+      list.push({id:t.identifier,x:t.clientX,y:t.clientY});
+    }
+  }
+  return list;
+}
+
+function tryBeginGesture(evt){
+  if(gestureInfo.isGesture) return;
+  if(!evt.touches || evt.touches.length<2) return;
+
+  const candTools=[toolSetSquare, toolRuler];
+  for(const tool of candTools){
+    if(!tool || tool.classList.contains('hidden')) continue;
+    const arr=getTouchesForTool(evt,tool);
+    if(arr.length>=2){
+      const p1={x:arr[0].x,y:arr[0].y};
+      const p2={x:arr[1].x,y:arr[1].y};
+      const d=dist(p1,p2);
+      const ang=angleDeg(p1,p2);
+
+      if(activeTool){
+        activeTool.classList.remove('dragging');
+      }
+      activeTool=null;
+      dragMode=null;
+
+      gestureInfo.isGesture=true;
+      gestureInfo.activeTool=tool;
+      gestureInfo.startDist=d||1;
+      gestureInfo.startAngle=ang;
+      gestureInfo.prevAngle=ang;
+      gestureInfo.startScale=parseFloat(tool.dataset.scale||"1")||1;
+      gestureInfo.startRot=parseFloat(tool.dataset.rot||"0")||0;
+
+      tool.classList.add('dragging');
+      dragMode="gesture";
+      break;
+    }
+  }
+}
+
+function doGestureUpdate(evt){
+  if(!gestureInfo.isGesture || !gestureInfo.activeTool) return;
+  const tool=gestureInfo.activeTool;
+  const touches=getTouchesForTool(evt, tool);
+
+  if(touches.length<2){
+    endGestureCompletely();
+    return;
+  }
+
+  const p1={x:touches[0].x,y:touches[0].y};
+  const p2={x:touches[1].x,y:touches[1].y};
+  const currDist=dist(p1,p2)||1;
+  const currAng =angleDeg(p1,p2);
+
+  let newScale = gestureInfo.startScale * (currDist / gestureInfo.startDist);
+  newScale=clamp(newScale,0.3,3);
+
+  let newRot = parseFloat(tool.dataset.rot||gestureInfo.startRot);
+  const dAngStep = angleDiffDeg(currAng, gestureInfo.prevAngle);
+  newRot += dAngStep*0.5;
+  newRot = Math.round(newRot*2)/2;
+  tool.dataset.scale=String(newScale);
+  tool.dataset.rot=String(newRot);
+  gestureInfo.prevAngle=currAng;
+
+  clampToolToCanvas(tool);
+  updateToolTransform(tool);
+}
+
+function endGestureIfDone(evt){
+  if(!gestureInfo.isGesture) return;
+  if(!evt.touches || evt.touches.length<2){
+    endGestureCompletely();
+  }
+}
+function endGestureCompletely(){
+  if(gestureInfo.activeTool){
+    gestureInfo.activeTool.classList.remove('dragging');
+  }
+  gestureInfo.isGesture=false;
+  gestureInfo.activeTool=null;
+  dragMode=null;
+}
+
+/* ============================================================
+   TOOL RESET
+   ============================================================ */
+function resetToolsPosition(){
+  if(toolSetSquare){
+    toolSetSquare.dataset.x="20";
+    toolSetSquare.dataset.y="20";
+    toolSetSquare.dataset.rot="0";
+    toolSetSquare.dataset.scale="1";
+    clampToolToCanvas(toolSetSquare);
+    updateToolTransform(toolSetSquare);
+  }
+  if(toolRuler){
+    toolRuler.dataset.x="60";
+    toolRuler.dataset.y="60";
+    toolRuler.dataset.rot="0";
+    toolRuler.dataset.scale="1";
+    clampToolToCanvas(toolRuler);
+    updateToolTransform(toolRuler);
+  }
+}
+
+/* ============================================================
+   SESSION RESET HOOK
+   ============================================================ */
+function resetInternalSessionDataToFresh(){
+  writePayload(0,"");
+  pushToXAPI(0,"");
+
+  firstAttemptDoneB  = new Array(orderB.length).fill(false);
+  firstAttemptMarksB = new Array(orderB.length).fill(0);
+  firstAttemptLogB   = new Array(orderB.length).fill('?');
+  finalSavedOnce     = false;
+
+  correctA           = new Array(orderA.length).fill(false);
+
+  qIndexA=0;
+  qIndexB=0;
+  section='A';
+}
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+function handlePointerDown(e){
+  tryBeginGesture(e);
+  if(gestureInfo.isGesture){
+    e.preventDefault();
+    return;
+  }
+
+  if(isEventOnTool(e)){
+    beginToolDrag(e);
+    return;
+  }
+  startDraw(e);
+}
+function handlePointerMove(e){
+  if(!gestureInfo.isGesture && e.touches && e.touches.length>1){
+    tryBeginGesture(e);
+  }
+  moveDraw(e);
+}
+function handlePointerUp(e){
+  endDraw(e);
+}
+function handlePointerLeave(e){
+  leaveDraw(e);
+}
+
+function attachCanvasEvents(){
+  canvasWrap.addEventListener('mousedown',handlePointerDown,false);
+  canvasWrap.addEventListener('mousemove',handlePointerMove,false);
+  canvasWrap.addEventListener('mouseup',  handlePointerUp,false);
+  canvasWrap.addEventListener('mouseleave',handlePointerLeave,false);
+
+  canvasWrap.addEventListener('touchstart',handlePointerDown,{passive:false});
+  canvasWrap.addEventListener('touchmove', handlePointerMove,{passive:false});
+  canvasWrap.addEventListener('touchend',  handlePointerUp,{passive:false});
+  canvasWrap.addEventListener('touchcancel',(e)=>{
+    if(checked && btnCheckNext.dataset.mode==="next") return;
+    e.preventDefault();
+    endGestureCompletely();
+    dragging=false;
+    previewEnd=null;
+    if(activeTool){
+      finishToolDrag();
+    }
+    paint();
+  },{passive:false});
+}
+
+function attachControlEvents(){
+  btnClear.addEventListener('click', clearLine);
+  btnCheckNext.addEventListener('click', doCheckOrNext);
+
+  btnSectionA.addEventListener('click', ()=>{
+    section='A';
+    btnSectionA.classList.add('active');
+    btnSectionB.classList.remove('active');
+    loadQuestion();
+  });
+
+  btnSectionB.addEventListener('click', ()=>{
+    section='B';
+    btnSectionB.classList.add('active');
+    btnSectionA.classList.remove('active');
+    loadQuestion();
+  });
+
+  btnSquare.addEventListener('click', ()=>toggleTool(toolSetSquare));
+  btnResetTools.addEventListener('click', resetToolsPosition);
+}
+
+function initDOMRefs(){
+  canvas=document.getElementById('grid');
+  ctx=canvas.getContext('2d');
+  canvasWrap=document.getElementById('canvasWrap');
+
+  toolSetSquare=document.getElementById('toolSetSquare');
+  toolRuler=document.getElementById('toolRuler');
+
+  qLabel=document.getElementById('qLabel');
+  scoreBadge=document.getElementById('scoreBadge');
+  promptBox=document.getElementById('promptBox');
+  legendStatus=document.getElementById('legendStatus');
+
+  btnCheckNext=document.getElementById('btnCheckNext');
+  btnClear=document.getElementById('btnClear');
+
+  btnSectionA=document.getElementById('btnSectionA');
+  btnSectionB=document.getElementById('btnSectionB');
+
+  topInfoText=document.getElementById('topInfoText');
+  statusBadge=document.getElementById('statusBadge');
+  statusBadgeText=document.getElementById('statusBadgeText');
+
+  miniPanel=document.getElementById('miniPanel');
+  miniScoreText=document.getElementById('miniScoreText');
+  miniFeedbackText=document.getElementById('miniFeedbackText');
+
+  btnSquare=document.getElementById('btnSquare');
+  btnResetTools=document.getElementById('btnResetTools');
+}
+
+function debounce(fn,ms){
+  let t;
+  return (...args)=>{
+    clearTimeout(t);
+    t=setTimeout(()=>fn.apply(this,args),ms);
+  };
+}
+
+/* Hook teacher buttons */
+function hookTeacherButtons(){
+  const saveStoreBtn = document.getElementById('save-store');
+  if(saveStoreBtn){
+    saveStoreBtn.addEventListener('click', ()=>{
+      const sVal = document.getElementById('score-input').value || 0;
+      const fVal = document.getElementById('feedback-input').value || "";
+      writePayload(sVal, fVal);
+      pushToXAPI(sVal, fVal);
+    });
+  }
+
+  const clearBtn = document.getElementById('clear-inputs');
+  if(clearBtn){
+    clearBtn.addEventListener('click', ()=>{
+      document.getElementById('score-input').value = '';
+      document.getElementById('feedback-input').value = '';
+      writePayload(0, '');
+      pushToXAPI(0, '');
+      finalSavedOnce=false;
+      resetInternalSessionDataToFresh();
+    });
+  }
+
+  const newSessionBtn=document.getElementById('newSessionBtn');
+  if(newSessionBtn){
+    newSessionBtn.addEventListener('click', ()=>{
+      writePayload(0,"");
+      pushToXAPI(0,"");
+      finalSavedOnce=false;
+      resetInternalSessionDataToFresh();
+    });
+  }
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initAll(){
+  initDOMRefs();
+  attachCanvasEvents();
+  attachControlEvents();
+  hookTeacherButtons();
+
+  resizeCanvas();
+  window.addEventListener('resize', debounce(resizeCanvas,100));
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', debounce(resizeCanvas,100));
+  }
+
+  clampToolToCanvas(toolSetSquare);
+  updateToolTransform(toolSetSquare);
+  clampToolToCanvas(toolRuler);
+  updateToolTransform(toolRuler);
+
+  loadQuestion();
+}
+
+/* hide script errors from pupils, but still detect if SLS is present */
+window.addEventListener('error',()=>{
+  if(typeof updateStore==="function" || typeof storeState==="function"){
+    window.__IN_SLS__=true;
+  }
+});
+
+/* lifecycle / sync */
+window.addEventListener('load', ()=>{
+  NewSessionClearKit.init({
+    activityId: window.ACTIVITY_ID,
+    clickButtonId: 'newSessionBtn',
+    pushZero: false,
+    onNewSession: ()=>{
+      resetInternalSessionDataToFresh();
+    }
+  });
+
+  syncFromLocalStorageToXAPI();
+});
+
+window.addEventListener('visibilitychange', ()=>{
+  if(!document.hidden) syncFromLocalStorageToXAPI();
+});
+window.addEventListener('focus', syncFromLocalStorageToXAPI);
+window.addEventListener('storage',(e)=>{
+  if(e.key===PAYLOAD_KEY && e.newValue){
+    syncFromLocalStorageToXAPI();
+  }
+});
+
+document.addEventListener('DOMContentLoaded', initAll, {once:true});
+</script>
+
+</body>
+</html>
