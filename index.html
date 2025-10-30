@@ -291,7 +291,7 @@ header.app-header small{
 
   /* NEW: board-card itself now flexes and stretches */
   flex:1 1 auto;
-  min-height:65vh;   /* was 50vh, now bigger by default */
+  min-height:65vh;
   height:100%;
   max-height:none;
 
@@ -702,7 +702,7 @@ canvas{
                 <div class="small"></div>
                 <div class="big"></div>
                 <div class="small"></div>
-                <div the="small"></div>
+                <div class="small"></div>
                 <div class="small"></div>
                 <div class="big"></div>
               </div>
@@ -883,6 +883,36 @@ function angleDiffDeg(a,b){
   while(d>180) d-=360;
   while(d<-180) d+=360;
   return d;
+}
+
+/* === Auto-align helpers for Set Square === */
+const SNAP_DEG = 8; // how close (in degrees) we snap to AB or ⟂AB
+
+function angleABDeg(){
+  if(!A_pt || !B_pt) return 0;
+  return Math.atan2(B_pt.y - A_pt.y, B_pt.x - A_pt.x) * (180/Math.PI);
+}
+
+function snapAngleToABIfClose(rawDeg, snapDeg = SNAP_DEG){
+  const base = angleABDeg();
+  const candidates = [base, base+90, base+180, base+270];
+  let best = rawDeg;
+  let bestDiff = 999;
+
+  for(const c of candidates){
+    const d = Math.abs(angleDiffDeg(rawDeg, c));
+    if(d < bestDiff){
+      best = c;
+      bestDiff = d;
+    }
+  }
+  return (bestDiff <= snapDeg) ? normalizeDeg(best) : normalizeDeg(rawDeg);
+}
+
+function normalizeDeg(d){
+  let x = d % 360;
+  if(x < 0) x += 360;
+  return Math.round(x*2)/2;
 }
 
 /* ============================================================
@@ -1674,7 +1704,13 @@ function doToolDrag(evt){
     const dAngStep = angleDiffDeg(currAngle, startState.prevAngle);
     let newRot = parseFloat(activeTool.dataset.rot||startState.rot);
     newRot += dAngStep*0.5; // damp twist
-    newRot = Math.round(newRot*2)/2; // snap
+    newRot = Math.round(newRot*2)/2; // existing half-degree snap
+
+    // Magnetic snap to AB / ⟂AB for Set Square only
+    if (activeTool === toolSetSquare){
+      newRot = snapAngleToABIfClose(newRot);
+    }
+
     activeTool.dataset.rot = String(newRot);
     startState.prevAngle = currAngle;
 
@@ -1786,6 +1822,12 @@ function doGestureUpdate(evt){
   const dAngStep = angleDiffDeg(currAng, gestureInfo.prevAngle);
   newRot += dAngStep*0.5;
   newRot = Math.round(newRot*2)/2;
+
+  // Magnetic snap when gesture on set square too
+  if(tool === toolSetSquare){
+    newRot = snapAngleToABIfClose(newRot);
+  }
+
   tool.dataset.scale=String(newScale);
   tool.dataset.rot=String(newRot);
   gestureInfo.prevAngle=currAng;
@@ -1848,6 +1890,51 @@ function resetInternalSessionDataToFresh(){
   qIndexA=0;
   qIndexB=0;
   section='A';
+}
+
+/* ============================================================
+   QUICK GESTURES: double-tap to flip ∥/⟂
+   ============================================================ */
+function setSquareSnapTo(mode /* "parallel" | "perpendicular" */){
+  if(!toolSetSquare) return;
+  const base = angleABDeg();
+  const target = (mode === "perpendicular") ? base + 90 : base;
+  toolSetSquare.dataset.rot = String(normalizeDeg(target));
+  clampToolToCanvas(toolSetSquare);
+  updateToolTransform(toolSetSquare);
+}
+
+function toggleSetSquareSnap(){
+  if(!toolSetSquare) return;
+  const base = angleABDeg();
+  const now = parseFloat(toolSetSquare.dataset.rot || "0");
+  const d0 = Math.abs(angleDiffDeg(now, base));      // ∥ distance
+  const d1 = Math.abs(angleDiffDeg(now, base + 90)); // ⟂ distance
+  const next = (d0 <= d1) ? "perpendicular" : "parallel";
+  setSquareSnapTo(next);
+}
+
+function attachSetSquareQuickGestures(){
+  if(!toolSetSquare) return;
+  const moveArea = toolSetSquare.querySelector('.move-area');
+  if(!moveArea) return;
+
+  // Desktop: double-click
+  moveArea.addEventListener('dblclick', (e)=>{
+    e.preventDefault();
+    toggleSetSquareSnap();
+  }, {passive:false});
+
+  // Touch: double-tap
+  let lastTap = 0;
+  moveArea.addEventListener('touchstart', (e)=>{
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      e.preventDefault();
+      toggleSetSquareSnap();
+    }
+    lastTap = now;
+  }, {passive:false});
 }
 
 /* ============================================================
@@ -2005,6 +2092,7 @@ function initAll(){
   attachCanvasEvents();
   attachControlEvents();
   hookTeacherButtons();
+  attachSetSquareQuickGestures(); // enable double-tap flip
 
   resizeCanvas();
   window.addEventListener('resize', debounce(resizeCanvas,100));
